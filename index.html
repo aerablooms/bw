@@ -2,413 +2,1080 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PROJECT 0.18</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WATTS & WEIGHT // A Pacific Climate Field Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340..900&family=Fraunces:ital,opsz,wght@1,9..144,400..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap');
-  * { box-sizing: border-box; }
-  html, body { margin:0; padding:0; background:#000; font-family:'Space Mono', monospace; color:#d8d8d0; height:100%; overflow:hidden; }
-  svg.dither-defs { position:absolute; width:0; height:0; }
-  #stage { width:100vw; height:100vh; position:relative; display:flex; align-items:center; justify-content:center; background:#000; }
-  #frame { width:780px; max-width:97vw; aspect-ratio:4/3; background:#050505; border:3px solid #3a3a34; box-shadow:0 0 0 6px #111, inset 0 0 40px rgba(0,0,0,0.9); position:relative; overflow:hidden; filter:grayscale(1); }
-  #frame::after { content:""; position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 1px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 3px); mix-blend-mode:multiply; z-index:50; }
-  #frame::before { content:""; position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 100px 22px rgba(0,0,0,0.9); z-index:51; }
-  .screen { position:absolute; inset:0; display:none; flex-direction:column; }
-  .screen.active { display:flex; }
-  #boot { background:#030503; color:#d8ead8; font-family:'VT323', monospace; padding:26px 28px; font-size:19px; line-height:1.5; justify-content:flex-start; filter:contrast(1.25); }
-  #bootLines { white-space:pre-wrap; flex:1; }
-  #startBtn { display:none; margin-top:16px; align-self:flex-start; background:transparent; border:2px solid #d8ead8; color:#d8ead8; font-family:'VT323', monospace; font-size:21px; letter-spacing:3px; padding:7px 20px; cursor:pointer; }
-  #startBtn:hover { background:#d8ead8; color:#050805; }
-  #vn { background:#0c0c0c; }
-  #topBar { height:26px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; background:#050505; border-bottom:1px solid #2a2a2a; font-family:'VT323', monospace; font-size:14px; color:#888; letter-spacing:1px; z-index:60; position:relative; }
-  #topBar .chapter { color:#eee; }
-  #notebookBtn { background:transparent; border:1px solid #555; color:#ccc; font-family:'VT323', monospace; font-size:14px; padding:1px 8px; cursor:pointer; letter-spacing:1px; }
-  #notebookBtn:hover { border-color:#eee; color:#fff; }
-  #portraitWrap { position:relative; flex:1; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; background:#0a0a0a; }
-  .portrait { position:absolute; bottom:0; height:100%; width:auto; max-width:62%; object-fit:cover; object-position:top; filter:url(#ditherFilter) grayscale(1) contrast(1.6) brightness(0.95); opacity:0; transition:opacity 0.3s ease; }
-  .portrait.left { left:-4%; }
-  .portrait.right { right:-4%; transform:scaleX(-1); }
-  .portrait.show { opacity:1; }
-  #dataCard { display:none; position:absolute; top:6%; left:7%; right:7%; background:#050505; border:1px solid #cfcfcf; padding:12px 14px; z-index:40; font-family:'VT323', monospace; font-size:16px; color:#eee; box-shadow:0 0 24px rgba(0,0,0,0.85); }
-  #dataCard.show { display:block; }
-  #dataCard .title { letter-spacing:2px; border-bottom:1px solid #444; padding-bottom:4px; margin-bottom:6px; }
-  #dataCard .row { display:flex; justify-content:space-between; font-size:13px; color:#d8d8d0; margin:2px 0; font-family:'Space Mono', monospace; }
-  #clickCatcher { position:absolute; inset:0; z-index:10; cursor:pointer; }
-  #textbox { height:42%; border-top:3px solid #3a3a34; background:#080808; padding:10px 16px 12px; display:flex; flex-direction:column; position:relative; }
-  #speaker { font-family:'VT323', monospace; font-size:19px; color:#eee; letter-spacing:2px; text-decoration:underline; text-decoration-color:#444; margin-bottom:5px; min-height:21px; }
-  #dialogueText { flex:1; font-size:13px; line-height:1.55; color:#cfcfc6; overflow-y:auto; padding-right:4px; }
-  #dialogueText::-webkit-scrollbar { width:5px; }
-  #dialogueText::-webkit-scrollbar-thumb { background:#333; }
-  #advanceHint { font-size:11px; color:#555; text-align:right; margin-top:4px; letter-spacing:1px; }
-  #choices { display:none; flex-direction:column; gap:5px; margin-top:6px; max-height:52%; overflow-y:auto; }
-  #choices.active { display:flex; }
-  .choiceBtn { background:#0f0f0f; border:1px solid #444; color:#d8d8d0; font-family:'Space Mono', monospace; font-size:12px; text-align:left; padding:7px 9px; cursor:pointer; }
-  .choiceBtn::before { content:"\25B8  "; color:#eee; }
-  .choiceBtn:hover { background:#1c1c1c; border-color:#eee; }
-  #notebook { display:none; position:absolute; inset:0; background:rgba(0,0,0,0.94); z-index:80; padding:22px 24px; overflow-y:auto; font-family:'VT323', monospace; }
-  #notebook.show { display:block; }
-  #notebook h2 { font-size:20px; letter-spacing:3px; color:#fff; border-bottom:1px solid #444; padding-bottom:6px; margin:0 0 10px; }
-  #notebook .entry { border:1px solid #333; padding:8px 10px; margin-bottom:8px; }
-  #notebook .entry .t { font-size:15px; color:#eee; letter-spacing:1px; margin-bottom:4px; }
-  #notebook .entry .row { display:flex; justify-content:space-between; font-size:12.5px; color:#bbb; font-family:'Space Mono', monospace; margin:1px 0; }
-  #notebook .empty { color:#666; font-family:'Space Mono', monospace; font-size:12.5px; }
-  #closeNotebook { margin-top:10px; background:transparent; border:1px solid #999; color:#eee; font-family:'VT323', monospace; font-size:15px; padding:5px 14px; cursor:pointer; letter-spacing:1px; }
-  #closeNotebook:hover { background:#fff; color:#000; }
-  #endScreen { background:#030503; color:#eee; font-family:'VT323', monospace; align-items:center; justify-content:flex-start; text-align:left; padding:22px 26px; overflow-y:auto; }
-  #endScreen h1 { font-size:24px; letter-spacing:3px; margin:6px 0 4px; text-align:center; }
-  #endScreen h3 { font-size:15px; letter-spacing:2px; color:#cfcfc6; margin:14px 0 4px; border-bottom:1px solid #333; padding-bottom:3px; }
-  #endScreen p { font-size:13.5px; color:#cfcfc6; line-height:1.55; font-family:'Space Mono', monospace; margin:4px 0; }
-  #endScreen ol { font-size:13.5px; color:#cfcfc6; line-height:1.6; font-family:'Space Mono', monospace; padding-left:18px; margin:4px 0; }
-  #endScreen li { margin-bottom:8px; }
-  #endScreen li b { color:#fff; }
-  #restartBtn { display:block; margin:18px auto 4px; background:transparent; border:2px solid #eee; color:#eee; font-family:'VT323', monospace; font-size:18px; padding:6px 18px; cursor:pointer; letter-spacing:2px; }
-  #restartBtn:hover { background:#eee; color:#000; }
-  #footerNote { color:#555; font-size:11px; margin-top:14px; text-align:center; font-family:'Space Mono', monospace; letter-spacing:1px; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root{
+  --ink:#1B1A15;
+  --paper:#EEE8D8;
+  --panel:#FAF6EA;
+  --amber:#DD9A2E;
+  --amberDeep:#A15F0C;
+  --tide:#146B70;
+  --tideDeep:#0A4245;
+  --coral:#BC432B;
+  --coralDeep:#7E2A19;
+  --sage:#5C7A4E;
+  --grey:#726C5C;
+  --line: rgba(27,26,21,0.14);
+}
+
+html{ scroll-behavior:smooth; }
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:'Inter',sans-serif;
+  background-image:
+    linear-gradient(var(--paper) 23px, rgba(27,26,21,0.035) 24px),
+    linear-gradient(90deg, var(--paper) 23px, rgba(27,26,21,0.035) 24px);
+  background-size:24px 24px;
+  overflow-x:hidden;
+}
+
+.serif{ font-family:'Fraunces', serif; }
+.mono{ font-family:'IBM Plex Mono', monospace; }
+
+#progress{ position:fixed; top:0; left:0; height:4px; width:0%; background:var(--amber); z-index:200; box-shadow:0 0 0 1px var(--ink) inset; }
+
+/* --- grain overlay --- */
+#grain{ position:fixed; inset:0; pointer-events:none; z-index:5; opacity:0.05; mix-blend-mode:multiply; }
+
+.wrap{ max-width:1400px; margin:0 auto; padding:0 20px; }
+
+/* ============ STAMP MOTIF ============ */
+.stamp{
+  display:inline-flex; align-items:center; justify-content:center; flex-direction:column;
+  width:118px; height:118px; border:2.5px solid var(--ink); border-radius:50%;
+  transform:rotate(-9deg); text-align:center; padding:6px;
+}
+.stamp .s1{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:2px; font-weight:600; }
+.stamp .s2{ font-family:'Fraunces',serif; font-weight:700; font-size:17px; margin:2px 0; }
+.stamp .s3{ font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1.5px; color:var(--grey); }
+
+/* ============ HERO ============ */
+.hero{
+  min-height:100vh; position:relative;
+  display:grid; grid-template-columns:64px 1fr;
+  padding:0;
+}
+.hero-spine{
+  border-right:2px solid var(--ink); display:flex; align-items:flex-end; justify-content:center; padding-bottom:40px;
+  background:repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(27,26,21,0.045) 7px, rgba(27,26,21,0.045) 14px);
+}
+.hero-spine span{
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:4px; font-weight:600; color:var(--grey);
+  white-space:nowrap;
+}
+
+.hero-main{ display:grid; grid-template-columns:1.15fr 0.85fr; align-items:center; gap:26px; padding:96px 40px 60px 48px; }
+
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2.5px; font-weight:600;
+  color:var(--tideDeep); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); padding:5px 0;
+  display:inline-block;
+}
+
+.hero-copy{ opacity:0; transform:translateY(22px); animation:rise .75s ease forwards .1s; }
+
+.hero h1{
+  font-family:'Fraunces',serif; font-weight:600; font-optical-sizing:auto;
+  font-size:clamp(46px,6.4vw,96px); letter-spacing:-0.01em; line-height:0.96; color:var(--ink);
+  margin-top:22px;
+}
+.hero h1 em{ font-style:italic; color:var(--amberDeep); font-weight:500; display:block; }
+.hero p{
+  margin-top:22px; font-size:18px; color:var(--grey); max-width:46ch; line-height:1.6;
+}
+.hero-meta{ margin-top:34px; display:flex; gap:24px; flex-wrap:wrap; }
+.hero-meta .m{ text-align:left; border-left:2px solid var(--ink); padding-left:10px; }
+.hero-meta .m b{ display:block; font-family:'Fraunces',serif; font-size:21px; font-weight:600; }
+.hero-meta .m span{ font-size:10.5px; color:var(--grey); letter-spacing:0.3px; }
+
+.scroll-hint{
+  margin-top:44px; font-size:11px; letter-spacing:2.5px; color:var(--grey); font-weight:600; font-family:'IBM Plex Mono',monospace;
+}
+.scroll-hint::after{
+  content:""; display:block; width:2px; height:32px; margin-top:10px; background:var(--ink);
+  animation:drop 1.8s ease-in-out infinite;
+}
+
+/* ---- hero cover card (the graphic) ---- */
+.hero-card{
+  position:relative;
+  background:var(--panel); border:3px solid var(--ink);
+  box-shadow:11px 11px 0 rgba(27,26,21,0.9);
+  padding:22px 22px 18px;
+  opacity:0; transform:translateY(22px) rotate(1.1deg); animation:rise .75s ease forwards .38s;
+}
+.hero-card .frame-label{
+  display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600;
+  letter-spacing:0.5px; text-transform:uppercase; color:var(--grey); margin-bottom:12px;
+  border-bottom:2px solid var(--ink); padding-bottom:8px;
+}
+.hero-card .stamp{
+  position:absolute; top:-30px; right:-26px; width:96px; height:96px; background:var(--panel);
+}
+.hero-card .caption{ font-size:12.5px; color:var(--grey); margin-top:10px; line-height:1.5; border-top:1px solid var(--line); padding-top:10px; }
+
+@media (max-width:900px){
+  .hero-spine{ display:none; }
+  .hero{ grid-template-columns:1fr; }
+  .hero-main{ grid-template-columns:1fr; padding:80px 22px 50px; gap:44px; }
+  .hero-card{ transform:none; }
+}
+@keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+@keyframes drop{
+  0%{ transform:scaleY(0); transform-origin:top; }
+  50%{ transform:scaleY(1); transform-origin:top; }
+  50.01%{ transform-origin:bottom; }
+  100%{ transform:scaleY(0); transform-origin:bottom; }
+}
+
+/* ============ TIDE DIVIDER ============ */
+.tide-divider{ width:100%; height:34px; overflow:hidden; }
+.tide-divider svg{ width:100%; height:100%; display:block; }
+
+/* ============ CHAPTER LABEL ============ */
+.chapter{ max-width:680px; margin:0 auto; padding:100px 24px 26px; text-align:left; }
+.chapter .num{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:2px; font-weight:600; color:var(--amberDeep); }
+.chapter .tag{
+  display:inline-block; background:var(--ink); color:var(--amber);
+  font-size:11.5px; letter-spacing:2px; font-weight:600; padding:5px 12px; text-transform:uppercase; margin-top:8px;
+}
+.chapter h2{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(30px,4.4vw,46px); margin:16px 0 14px; line-height:1.1; }
+.chapter p{ font-size:17px; color:var(--grey); line-height:1.65; max-width:60ch; }
+
+/* ============ VERTICAL STICKY STORY ============ */
+.story{ position:relative; }
+.sticky{
+  position:sticky; top:0; height:100vh;
+  display:flex; align-items:center; justify-content:space-around;
+  overflow:hidden; gap:34px; padding:0 24px;
+}
+
+.panel{
+  background:var(--panel); border:3px solid var(--ink);
+  box-shadow:9px 9px 0 rgba(27,26,21,0.9);
+  padding:20px 22px 16px;
+}
+.panel.chartPanel{ width:52%; max-width:620px; }
+.panel .frame-label{
+  display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600;
+  letter-spacing:0.5px; text-transform:uppercase; color:var(--grey); margin-bottom:10px;
+  border-bottom:2px solid var(--ink); padding-bottom:8px;
+}
+svg{ width:100%; height:auto; display:block; overflow:visible; }
+
+.graph-line{ fill:none; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; transition:stroke-dashoffset .15s linear; }
+.graph-fill{ transition:opacity .3s ease; }
+.axis-line{ stroke:var(--ink); stroke-width:1.5; }
+.gridline{ stroke:rgba(27,26,21,0.12); stroke-dasharray:2 4; }
+.axis-text{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; fill:var(--grey); font-weight:600; }
+
+.marker{ opacity:0; transition:opacity .35s ease; }
+.marker.show{ opacity:1; }
+.marker-dot{ r:5.5; stroke:var(--panel); stroke-width:2.5; }
+.marker-val{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; text-anchor:middle; }
+
+.bar{ transition:y .5s ease, height .5s ease; }
+.bar-label{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink); text-anchor:middle; font-weight:600; }
+.bar-value{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; fill:var(--ink); font-weight:600; text-anchor:middle; opacity:0; transition:opacity .35s ease; }
+.bar-value.show{ opacity:1; }
+
+/* text steps */
+.text-area{ width:36%; max-width:420px; min-height:320px; position:relative; }
+.step{
+  position:absolute; top:0; left:0; right:0; opacity:0; transform:translateY(32px);
+  transition:opacity .5s ease, transform .5s ease;
+}
+.step.active{ opacity:1; transform:translateY(0); }
+.step .tag{
+  display:inline-block; background:var(--amber); color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:1px; padding:3px 9px; text-transform:uppercase;
+}
+.step h3{ font-family:'Fraunces',serif; font-weight:600; font-size:36px; margin:14px 0 12px; line-height:1.08; }
+.step p{ font-size:16.5px; line-height:1.65; color:var(--ink); margin:0; }
+.step .stat{ font-family:'Fraunces',serif; font-size:25px; font-weight:600; color:var(--coral); margin-top:14px; }
+.step .stat span{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--grey); font-weight:500; margin-left:6px; display:inline-block; margin-top:2px; }
+
+.progress-rail{ position:absolute; left:8px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:8px; z-index:3; }
+.progress-rail .dot{ width:8px; height:8px; background:var(--panel); border:2px solid var(--ink); transition:background .3s; }
+.progress-rail .dot.active{ background:var(--amber); }
+
+@media (max-width:900px){
+  .sticky{ flex-direction:column; justify-content:center; padding-top:64px; gap:20px;}
+  .panel.chartPanel, .text-area{ width:92%; max-width:480px; }
+  .text-area{ min-height:230px; }
+  .progress-rail{ display:none; }
+}
+
+/* ============ IMAGE SWIPE INTERLUDE ============ */
+.interlude{ position:relative; }
+.interlude-sticky{
+  position:sticky; top:0; height:100vh; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  background:var(--ink);
+}
+.interlude-heading{ text-align:center; margin-bottom:22px; padding:0 24px; position:relative; z-index:3; }
+.interlude-heading .tag{
+  display:inline-block; background:var(--amber); color:var(--ink);
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; font-weight:600; padding:5px 12px; text-transform:uppercase;
+}
+.interlude-heading h2{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(26px,3.6vw,38px); margin:16px 0 6px; color:var(--paper); }
+.interlude-heading p{ font-size:14.5px; color:#CFC9B8; max-width:520px; margin:0 auto; }
+
+.interlude-track-outer{ position:relative; width:100%; overflow:hidden; height:min(56vw,520px); display:flex; align-items:center; }
+.interlude-track{ display:flex; gap:22px; padding:0 50vw; will-change:transform; align-items:center; }
+.interlude-frame{
+  flex:0 0 auto; width:min(58vw,620px);
+  background:var(--panel); border:4px solid var(--ink);
+  box-shadow:12px 12px 0 rgba(0,0,0,0.55);
+  opacity:0.16; filter:blur(1.5px);
+  transform:scale(0.72);
+  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
+}
+.interlude-frame.is-active{
+  opacity:1; filter:blur(0);
+  transform:scale(1);
+}
+.interlude-frame img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+
+.interlude-hint{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.5px; color:#CFC9B8; font-weight:600; margin-top:22px; text-transform:uppercase; }
+.interlude-progress{ width:200px; height:4px; background:rgba(255,255,255,0.15); border:2px solid var(--amber); margin:10px auto 0; overflow:hidden; }
+.interlude-progress-fill{ height:100%; background:var(--amber); width:0%; }
+
+@media (max-width:900px){
+  .interlude-frame{ width:80vw; }
+  .interlude-track{ padding:0 10vw; }
+}
+
+/* ============ HORIZONTAL SCROLL CHAPTER ============ */
+.hscroll-outer{ position:relative; height:340vh; }
+.hscroll-sticky{
+  position:sticky; top:0; height:100vh; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.hscroll-track{
+  display:flex; gap:26px; padding:0 6vw; will-change:transform;
+}
+.hcard{
+  flex:0 0 auto; width:min(78vw,400px);
+  background:var(--panel); border:3px solid var(--ink);
+  box-shadow:9px 9px 0 rgba(27,26,21,0.9);
+  padding:26px 24px;
+}
+.hcard .tag{
+  display:inline-block; background:var(--ink); color:var(--amber); font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600;
+  letter-spacing:1.5px; padding:4px 10px; text-transform:uppercase; margin-bottom:14px;
+}
+.hcard h3{ font-family:'Fraunces',serif; font-weight:600; font-size:27px; margin-bottom:10px; }
+.hcard .figure{ font-family:'Fraunces',serif; font-size:38px; font-weight:600; color:var(--tideDeep); margin:8px 0; }
+.hcard .figure span{ font-family:'Inter',sans-serif; font-size:13.5px; color:var(--grey); font-weight:400; display:block; margin-top:5px; line-height:1.4;}
+.hcard p{ font-size:14.5px; color:var(--ink); line-height:1.6; margin-top:12px;}
+.hcard.warn .figure{ color:var(--coral); }
+.hcard-bar{ height:13px; background:var(--paper); border:2px solid var(--ink); margin:14px 0 4px; position:relative; overflow:hidden; }
+.hcard-bar-fill{ height:100%; background:var(--tide); transition:width 1s ease; }
+.hcard.warn .hcard-bar-fill{ background:var(--coral); }
+.hcard-sub{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grey); letter-spacing:0.3px;}
+
+.hscroll-heading{ text-align:center; margin-bottom:28px; padding:0 24px; }
+.hscroll-heading .tag{
+  display:inline-block; background:var(--ink); color:var(--amber);
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; font-weight:600; padding:5px 12px; text-transform:uppercase;
+}
+.hscroll-heading h2{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(27px,4vw,40px); margin:16px 0 8px; }
+.hscroll-heading p{ font-size:15px; color:var(--grey); max-width:520px; margin:0 auto; }
+
+.hscroll-hint{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.5px; color:var(--grey); font-weight:600; margin-top:20px; text-transform:uppercase; }
+.hscroll-progress{ width:200px; height:4px; background:var(--paper); border:2px solid var(--ink); margin:10px auto 0; overflow:hidden; }
+.hscroll-progress-fill{ height:100%; background:var(--amber); width:0%; }
+
+/* ============ FORECAST SPLIT ============ */
+.split-panels{ display:flex; gap:24px; width:56%; max-width:640px; }
+.split-panels .panel{ width:50%; }
+@media (max-width:900px){ .split-panels{ width:92%; max-width:480px; flex-direction:column; } .split-panels .panel{ width:100%; } }
+
+/* ============ CLUSTER / CORRELATION ============ */
+.bubble-label{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; fill:var(--ink); text-anchor:middle; font-weight:600; }
+.bubble-sub{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--grey); text-anchor:middle; }
+.bubble{ transition:cx .6s ease, cy .6s ease, r .6s ease, opacity .5s ease, fill .5s ease; }
+.corr-dot{ transition:opacity .4s ease; }
+.corr-line{ stroke:var(--ink); stroke-width:2; stroke-dasharray:5 4; opacity:0; transition:opacity .5s ease; }
+
+/* ============ ENDING ============ */
+.end{
+  min-height:100vh; display:grid; place-items:center; text-align:center;
+  background:var(--ink); color:var(--paper); padding:110px 24px 90px;
+  border-top:4px solid var(--amberDeep); position:relative;
+}
+.end .tag{
+  display:inline-block; background:var(--amber); color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:2px; padding:5px 12px; text-transform:uppercase; margin-bottom:22px;
+}
+.end h2{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(32px,5vw,56px); margin:0 0 18px; max-width:19ch; margin-left:auto; margin-right:auto; line-height:1.08; }
+.end > div > p.lede{ font-size:18px; color:#D9D2BE; max-width:580px; margin:0 auto; line-height:1.65; }
+.end .stats{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:56px; }
+.end .stat-box{ border:2px solid var(--amber); padding:16px 20px; text-align:left; min-width:180px; background:rgba(255,255,255,0.02); }
+.end .stat-box .n{ font-family:'Fraunces',serif; font-size:32px; font-weight:600; color:var(--amber); display:block; }
+.end .stat-box .l{ font-size:11.5px; letter-spacing:0.3px; color:#CFC9B8; margin-top:6px; max-width:18ch; line-height:1.4; }
+.end .findings{ margin-top:56px; text-align:left; max-width:640px; margin-left:auto; margin-right:auto; border-top:1px solid rgba(255,255,255,0.2); padding-top:28px; }
+.end .findings li{ list-style:none; padding-left:20px; position:relative; margin-bottom:12px; font-size:14.5px; color:#D9D2BE; line-height:1.55; }
+.end .findings li::before{ content:"—"; position:absolute; left:0; color:var(--amber); }
+
+.end .play-cta{ margin-top:52px; text-align:center; }
+.end .play-cta .play-btn{
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--coral); color:#fff; text-decoration:none;
+  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; letter-spacing:1.5px;
+  padding:14px 30px; border-radius:6px; text-transform:uppercase;
+  box-shadow:0 6px 0 var(--coralDeep), 0 8px 16px rgba(0,0,0,0.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.end .play-cta .play-btn:hover{ transform:translateY(2px); box-shadow:0 4px 0 var(--coralDeep), 0 6px 12px rgba(0,0,0,0.35); }
+.end .play-cta .play-btn svg{ width:20px; height:20px; flex:0 0 auto; }
+.end .play-cta .play-note{ margin-top:14px; font-size:12px; color:#CFC9B8; letter-spacing:0.5px; font-family:'IBM Plex Mono',monospace; }
+
+/* ============ CREDITS ============ */
+.credits{ padding:54px 24px 90px; text-align:center; font-size:12.5px; color:var(--grey); max-width:680px; margin:0 auto; line-height:1.85; }
+.credits .stamp{ margin-bottom:26px; }
+.credits b{ color:var(--ink); }
+
+@media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
 
-<svg class="dither-defs">
-  <filter id="ditherFilter" x="-20%" y="-20%" width="140%" height="140%">
-    <feColorMatrix type="matrix" values="0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0" result="gray"/>
-    <feComponentTransfer in="gray" result="contrasted">
-      <feFuncR type="linear" slope="2.1" intercept="-0.45"/>
-      <feFuncG type="linear" slope="2.1" intercept="-0.45"/>
-      <feFuncB type="linear" slope="2.1" intercept="-0.45"/>
-    </feComponentTransfer>
-    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise"/>
-    <feComponentTransfer in="noise" result="threshNoise">
-      <feFuncA type="discrete" tableValues="0 1"/>
-    </feComponentTransfer>
-    <feComposite in="contrasted" in2="threshNoise" operator="arithmetic" k1="0" k2="1" k3="0.55" k4="-0.05" result="dithered"/>
-    <feComponentTransfer in="dithered">
-      <feFuncR type="discrete" tableValues="0.05 0.95"/>
-      <feFuncG type="discrete" tableValues="0.05 0.95"/>
-      <feFuncB type="discrete" tableValues="0.05 0.95"/>
-    </feComponentTransfer>
-  </filter>
-</svg>
+<div id="progress"></div>
+<svg id="grain" width="100%" height="100%"><filter id="noiseFilt"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#noiseFilt)"/></svg>
 
-<div id="stage">
-<div id="frame">
-
-  <div class="screen active" id="boot">
-    <div id="bootLines"></div>
-    <button id="startBtn" onclick="startGame()">[ START ]</button>
-  </div>
-
-  <div class="screen" id="vn">
-    <div id="topBar">
-      <span class="chapter" id="chapterLabel">CH.0 &mdash; BRIEFING</span>
-      <button id="notebookBtn" onclick="toggleNotebook(true)">CASE LOG <span id="logCount">[0]</span></button>
-    </div>
-    <div id="portraitWrap">
-      <img class="portrait left" id="portraitLeft" src="https://raw.githubusercontent.com/aerablooms/proj18/main/the%20male.jpeg">
-      <img class="portrait right" id="portraitRight" src="https://raw.githubusercontent.com/aerablooms/proj18/main/the%20female.jpeg">
-      <div id="dataCard">
-        <div class="title">// DATASET READOUT</div>
-        <div id="dataCardBody"></div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-spine"><span>FIELD REPORT · VOL. 01 · PACIFIC COMMUNITY DATA HUB</span></div>
+  <div class="hero-main">
+    <div class="hero-copy">
+      <div class="eyebrow">SPC · CLIMATE CHANGE INDICATORS</div>
+      <h1>Watts &amp; weight<em>a ledger of Pacific power</em></h1>
+      <p>Eighteen island grids, twenty-four years, and a question the data keeps returning to: who is burning the fuel that lights the region — and who is left holding the tide it brings.</p>
+      <div class="hero-meta">
+        <div class="m"><b>2000–2024</b><span>YEARS OF RECORD</span></div>
+        <div class="m"><b>18 / 17</b><span>COUNTRIES &amp; TERRITORIES</span></div>
+        <div class="m"><b>1,367</b><span>VALID OBSERVATIONS</span></div>
       </div>
-      <div id="clickCatcher" onclick="advance()"></div>
+      <div class="scroll-hint">SCROLL TO BEGIN</div>
     </div>
-    <div id="textbox">
-      <div id="speaker">&nbsp;</div>
-      <div id="dialogueText"></div>
-      <div id="advanceHint">&#9662; click to continue</div>
-      <div id="choices"></div>
-    </div>
-    <div id="notebook">
-      <h2>CASE LOG</h2>
-      <div id="notebookBody"></div>
-      <button id="closeNotebook" onclick="toggleNotebook(false)">[ CLOSE ]</button>
+    <div class="hero-card">
+      <div class="stamp"><span class="s1">FIELD</span><span class="s2">SPC</span><span class="s3">2000–23</span></div>
+      <div class="frame-label"><span>POWER-GROWTH LEADERBOARD</span><span>GWh / YR</span></div>
+      <svg id="heroBars" viewBox="0 0 320 230"></svg>
+      <div class="caption">OLS growth slope by economy, 2000–2023 — New Caledonia leads, Guam is the region's only decline.</div>
     </div>
   </div>
+</section>
 
-  <div class="screen" id="endScreen">
-    <h1>ANALYSIS COMPLETE</h1>
-    <div id="endBody"></div>
-    <button id="restartBtn" onclick="location.reload()">[ REPLAY INVESTIGATION ]</button>
-    <div id="footerNote">PROJECT 0.18 &mdash; A DATA INVESTIGATION GAME</div>
-  </div>
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
 
+<!-- CHAPTER 1: FIJI LINE (vertical sticky) -->
+<div class="chapter">
+  <div class="num">CHAPTER ONE</div>
+  <div class="tag">Case study</div>
+  <h2>Fiji's grid, 2000 &ndash; 2023</h2>
+  <p>Of every economy in the SPC record, Fiji's demand climbs the most predictably — a near-perfect line from a diesel-lit coast to a modern, tourist-driven grid.</p>
 </div>
+
+<section class="story" id="story1" style="height:400vh;">
+  <div class="sticky">
+    <div class="progress-rail" id="rail1"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="panel chartPanel">
+      <div class="frame-label"><span>FIJI · ELECTRICITY GENERATED</span><span>GWh / YEAR</span></div>
+      <svg id="chart1" viewBox="0 0 500 340"></svg>
+    </div>
+    <div class="text-area" id="text1">
+      <div class="step" data-i="0">
+        <div class="tag">2000</div>
+        <h3>673 GWh</h3>
+        <p>Fiji generates about 673 gigawatt-hours in the first year of the record — enough for radios, a few refrigerators, and streetlights along the coast.</p>
+      </div>
+      <div class="step" data-i="1">
+        <div class="tag">2010</div>
+        <h3>958 GWh</h3>
+        <p>Demand climbs more than 40% in a decade as tourism expands and diesel plants run longer hours to keep pace.</p>
+      </div>
+      <div class="step" data-i="2">
+        <div class="tag">2019</div>
+        <h3>1,228 GWh</h3>
+        <p>Growth keeps outrunning the cleanest options on the grid — imported fuel still meets most of the new demand.</p>
+      </div>
+      <div class="step" data-i="3">
+        <div class="tag">2023</div>
+        <h3>1,285 GWh</h3>
+        <p>Nearly double the year-2000 figure. Of all 18 economies in the dataset, Fiji's climb is the straightest.</p>
+        <div class="stat">+22.8 GWh/yr <span>R&sup2; = 0.94 — the most linear trend in the region</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
+
+<!-- CHAPTER 2: HORIZONTAL SCROLL FILMSTRIP -->
+<section class="hscroll-outer" id="hstory">
+  <div class="hscroll-sticky">
+    <div class="hscroll-heading">
+      <div class="num" style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;font-weight:600;color:var(--amberDeep);">CHAPTER TWO</div>
+      <div class="tag">Leaderboard</div>
+      <h2>Five grids, five directions</h2>
+      <p>Per-country OLS slopes rank the region's growth. Scroll down to move sideways through the fastest riser, the biggest grid, and the one economy shrinking.</p>
+    </div>
+    <div class="hscroll-track" id="htrack">
+      <div class="hcard">
+        <div class="tag">New Caledonia</div>
+        <h3>The fastest riser</h3>
+        <div class="figure">+87.4 <span>GWh added every year (R&sup2; = 0.88) — the steepest slope of any PICT</span></div>
+        <div class="hcard-bar"><div class="hcard-bar-fill" style="width:100%; background:#A15F0C;"></div></div>
+        <div class="hcard-sub">MEAN 2000–2023: 2,457.7 GWh</div>
+        <p>Nickel processing pushes this grid up faster than anywhere else in the Pacific — output more than doubled since 2000.</p>
+      </div>
+      <div class="hcard">
+        <div class="tag">Papua New Guinea</div>
+        <h3>The biggest grid</h3>
+        <div class="figure">2,863 <span>GWh average output, 2000–2023 — more than any other PICT</span></div>
+        <div class="hcard-bar"><div class="hcard-bar-fill" style="width:82%;"></div></div>
+        <div class="hcard-sub">GROWTH: +34.8 GWh/yr</div>
+        <p>Mining and gas exports drive scale here more than any single trend line — the largest, most volatile grid in the record.</p>
+      </div>
+      <div class="hcard">
+        <div class="tag">Fiji</div>
+        <h3>The steadiest climb</h3>
+        <div class="figure">+22.8 <span>GWh a year, R&sup2; = 0.94 — the most predictable trend of any economy</span></div>
+        <div class="hcard-bar"><div class="hcard-bar-fill" style="width:65%;"></div></div>
+        <div class="hcard-sub">MEAN 2000–2023: 970.0 GWh</div>
+        <p>Tourism and household demand pull the grid upward in an almost perfectly straight line, year after year.</p>
+      </div>
+      <div class="hcard">
+        <div class="tag">French Polynesia</div>
+        <h3>The quiet middle</h3>
+        <div class="figure">660 <span>GWh average, with the tightest spread of any top-5 producer (&sigma; = 43.5)</span></div>
+        <div class="hcard-bar"><div class="hcard-bar-fill" style="width:46%;"></div></div>
+        <div class="hcard-sub">RANGE: 536.1 – 711.5 GWh</div>
+        <p>Neither surging nor shrinking — a small, stable grid that barely moves outside its own narrow band.</p>
+      </div>
+      <div class="hcard warn">
+        <div class="tag">Guam — the exception</div>
+        <h3>The only grid shrinking</h3>
+        <div class="figure">&minus;4.6 <span>GWh a year — the sole major producer in decline</span></div>
+        <div class="hcard-bar"><div class="hcard-bar-fill" style="width:32%;"></div></div>
+        <div class="hcard-sub">MEAN 2000–2023: 1,749.6 GWh</div>
+        <p>While the rest of the region climbs, Guam's output has quietly eased back for two decades.</p>
+      </div>
+    </div>
+    <div class="hscroll-hint">KEEP SCROLLING ↓
+      <div class="hscroll-progress"><div class="hscroll-progress-fill" id="hfill"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
+
+<!-- CHAPTER 3: GHG BAR (vertical sticky) -->
+<div class="chapter">
+  <div class="num">CHAPTER THREE</div>
+  <div class="tag">Per capita</div>
+  <h2>Rising demand isn't rising blame</h2>
+  <p>Measured per person, the story flips. Two territories sit far above the rest — for very different reasons — while most of the region emits only a fraction of the global average.</p>
+</div>
+
+<section class="story" id="story3" style="height:400vh;">
+  <div class="sticky">
+    <div class="progress-rail" id="rail3"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="panel chartPanel">
+      <div class="frame-label"><span>GHG EMISSIONS PER CAPITA · TOP 5 MEAN</span><span>TONNES</span></div>
+      <svg id="chart3" viewBox="0 0 500 340"></svg>
+    </div>
+    <div class="text-area" id="text3">
+      <div class="step" data-i="0">
+        <div class="tag">Fiji &amp; Vanuatu</div>
+        <h3>~2.9 tonnes</h3>
+        <p>Fiji averages 2.9 t/capita (&sigma; = 0.3, remarkably stable). Vanuatu sits at the same level but is trending down — &minus;0.030 t/yr, R&sup2; = 0.84, the most consistent decline in the region.</p>
+      </div>
+      <div class="step" data-i="1">
+        <div class="tag">French Polynesia</div>
+        <h3>3.5 tonnes</h3>
+        <p>A modest step above its neighbours, with more year-to-year variation (&sigma; = 1.0) than Fiji's tight, steady line.</p>
+      </div>
+      <div class="step" data-i="2">
+        <div class="tag">New Caledonia</div>
+        <h3>13.2 tonnes, rising</h3>
+        <p>Nickel processing pushes per-person emissions far above its neighbours — and still climbing, +0.138 t every year, the steepest rise of any PICT.</p>
+      </div>
+      <div class="step" data-i="3">
+        <div class="tag">Palau — the outlier</div>
+        <h3>132 tonnes, on average</h3>
+        <p>Real, but misleading alone — much of that fuel is sold to passing ships and aircraft, not burned by residents. It is also falling fast: &minus;2.22 t/yr, the steepest decline on record.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
+
+<!-- INTERLUDE: image swipe gallery -->
+<section class="interlude">
+  <div class="interlude-sticky">
+    <div class="interlude-heading">
+      <div class="tag">Pause point</div>
+      <h2>Halfway</h2>
+      <p>Before the forecast — the coastline the numbers are actually about. Scroll to swipe through.</p>
+    </div>
+    <div class="interlude-track-outer">
+      <div class="interlude-track" id="itrack">
+        <div class="interlude-frame"><img src="image1.png" alt="Pacific islands at sunset"></div>
+        <div class="interlude-frame"><img src="image2.png" alt="Travelers arriving on the islands"></div>
+        <div class="interlude-frame"><img src="image3.png" alt="Island dance and culture"></div>
+        <div class="interlude-frame"><img src="image4.png" alt="View of the real Pacific"></div>
+        <div class="interlude-frame"><img src="image5.png" alt="Ocean connecting the islands"></div>
+        <div class="interlude-frame"><img src="image6.png" alt="Solar panels and opportunity"></div>
+        <div class="interlude-frame"><img src="image8.png" alt="Diesel generator at dusk"></div>
+        <div class="interlude-frame"><img src="image9.png" alt="Village lights at night"></div>
+        <div class="interlude-frame"><img src="image11.png" alt="Small islands, big energy challenge"></div>
+        <div class="interlude-frame"><img src="image12.png" alt="Wind turbines and solar future"></div>
+        <div class="interlude-frame"><img src="image13.png" alt="The Pacific is more than blue"></div>
+      </div>
+    </div>
+    <div class="interlude-hint">KEEP SCROLLING ↓
+      <div class="interlude-progress"><div class="interlude-progress-fill" id="ifill"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
+
+<!-- CHAPTER 4: FORECAST SPLIT (vertical sticky, two synced charts) -->
+<div class="chapter">
+  <div class="num">CHAPTER FOUR</div>
+  <div class="tag">Five-year outlook</div>
+  <h2>Two lines, one naive forecast</h2>
+  <p>A linear extrapolation of both regional trends — power climbing, average per-person emissions easing — assuming no structural break in either. Directional only.</p>
+</div>
+
+<section class="story" id="story4" style="height:400vh;">
+  <div class="sticky">
+    <div class="progress-rail" id="rail4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="split-panels">
+      <div class="panel">
+        <div class="frame-label"><span>TOTAL POWER</span><span>GWh</span></div>
+        <svg id="chart4a" viewBox="0 0 240 260"></svg>
+      </div>
+      <div class="panel">
+        <div class="frame-label"><span>AVG GHG/CAPITA</span><span>TONNES</span></div>
+        <svg id="chart4b" viewBox="0 0 240 260"></svg>
+      </div>
+    </div>
+    <div class="text-area" id="text4">
+      <div class="step" data-i="0">
+        <div class="tag">2024 / 2025</div>
+        <h3>11,341 GWh</h3>
+        <p>The regional total is projected to open the forecast window at roughly 11,341 GWh, while average per-capita emissions ease to 6.24 t.</p>
+      </div>
+      <div class="step" data-i="1">
+        <div class="tag">2025 / 2026</div>
+        <h3>11,496 GWh</h3>
+        <p>Power output keeps pace with its historic slope of +155.1 GWh/yr (R&sup2; = 0.915) — one of the most linear regional trends in the dataset.</p>
+      </div>
+      <div class="step" data-i="2">
+        <div class="tag">2026 / 2027</div>
+        <h3>11,651 GWh</h3>
+        <p>Emissions per capita continue their gentle slide, &minus;0.118 t/yr on average — a trend driven substantially by Palau's decline from a very high base.</p>
+      </div>
+      <div class="step" data-i="3">
+        <div class="tag">2027 / 2028</div>
+        <h3>11,806 GWh</h3>
+        <p>The two lines diverge further: more electricity generated across the region, less average emissions weight per person carrying it.</p>
+      </div>
+      <div class="step" data-i="4">
+        <div class="tag">2028 / 2029</div>
+        <h3>11,962 GWh &nbsp;/&nbsp; 5.77 t</h3>
+        <p>By the end of the window, forecast power sits near 11,962 GWh — and average GHG per capita near 5.77 t. Neither line is a policy model — both are naive straight-edge extrapolations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="tide-divider"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0,20 Q50,2 100,20 T200,20 T300,20 T400,20 T500,20 T600,20 T700,20 T800,20 T900,20 T1000,20 T1100,20 T1200,20" fill="none" stroke="#1B1A15" stroke-width="2"/></svg></div>
+
+<!-- CHAPTER 5: CORRELATION + CLUSTERS -->
+<div class="chapter">
+  <div class="num">CHAPTER FIVE</div>
+  <div class="tag">Pattern check</div>
+  <h2>Growth doesn't predict guilt</h2>
+  <p>A weak, statistically insignificant correlation — and a clustering model that splits the region into three very different emissions stories.</p>
+</div>
+
+<section class="story" id="story5" style="height:400vh;">
+  <div class="sticky">
+    <div class="progress-rail" id="rail5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="panel chartPanel">
+      <div class="frame-label"><span>17 PICTS · GROWTH vs. CLUSTER PROFILE</span><span>K-MEANS, K=3</span></div>
+      <svg id="chart5" viewBox="0 0 500 340"></svg>
+    </div>
+    <div class="text-area" id="text5">
+      <div class="step" data-i="0">
+        <div class="tag">Correlation</div>
+        <h3>r = 0.18</h3>
+        <p>Across 17 economies, a country's power-generation growth rate barely predicts its GHG-per-capita growth rate (p = 0.53) — country-specific factors dominate instead.</p>
+      </div>
+      <div class="step" data-i="1">
+        <div class="tag">Cluster 0 — 15 countries</div>
+        <h3>Low &amp; stable</h3>
+        <p>From American Samoa to Vanuatu, fifteen of seventeen economies sit in one tight, low-emitting cluster — the regional norm, not the exception.</p>
+      </div>
+      <div class="step" data-i="2">
+        <div class="tag">Cluster 1 — Palau</div>
+        <h3>Extreme &amp; falling</h3>
+        <p>Palau stands alone: an emissions level an order of magnitude above its neighbours, driven by fuel re-exports — and now declining sharply from that peak.</p>
+      </div>
+      <div class="step" data-i="3">
+        <div class="tag">Cluster 2 — New Caledonia</div>
+        <h3>Elevated &amp; rising</h3>
+        <p>The only economy that is both structurally high and still climbing — the reverse of Palau's trajectory, and worth watching closest.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- END -->
+<section class="end">
+  <div>
+    <div class="tag">Closing</div>
+    <h2>The tide doesn't check who caused it</h2>
+    <p class="lede">Pacific grids are modernising fast, mostly on imported fuel, while two small territories — for opposite reasons — carry an outsized share of the region's per-person emissions story.</p>
+    <div class="stats">
+      <div class="stat-box"><span class="n">+155.1</span><span class="l">GWh added to the regional grid every year (R&sup2; = 0.915)</span></div>
+      <div class="stat-box"><span class="n">11,962</span><span class="l">GWh — forecast regional total by 2028</span></div>
+      <div class="stat-box"><span class="n">&minus;0.118t</span><span class="l">average per-capita GHG decline per year, 1970–2024</span></div>
+      <div class="stat-box"><span class="n">r=0.18</span><span class="l">correlation between power growth and emissions growth — weak, p = 0.53</span></div>
+    </div>
+    <ul class="findings">
+      <li>Regional power generation grew strongly and near-linearly over 2000–2023, led by New Caledonia, Papua New Guinea and Fiji.</li>
+      <li>The region-wide decline in average per-capita emissions is dominated by one outlier — Palau falling from a very high base — not a broad-based decarbonisation.</li>
+      <li>Clustering confirms Palau and New Caledonia are structurally distinct from the other 15 PICTs and should be reported separately to avoid a skewed regional narrative.</li>
+      <li>Both five-year forecasts are naive linear extrapolations — directional estimates only, not substitutes for engineering or IPCC-aligned scenario modelling.</li>
+    </ul>
+    <div class="play-cta">
+      <a class="play-btn" href="https://aerablooms.github.io/bw/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M10 8.5L16 12L10 15.5V8.5Z" fill="currentColor"/></svg>
+        Run
+      </a>
+      <div class="play-note">Play the interactive investigation this report is based on</div>
+    </div>
+  </div>
+</section>
+
+<div class="credits">
+  <div class="stamp"><span class="s1">FIELD</span><span class="s2">SPC</span><span class="s3">DATA HUB</span></div>
+  <div>Data source and methodology below.</div>
+  <div style="margin-top:14px;"><b>Source:</b> Pacific Community (SPC) Pacific Data Hub, "Climate Change Indicators" data flow (SPC_DF_CLIMATE_CHANGE_1.0) — Power generation (GWh, 2000–2023, 18 countries/territories, 432 observations) and Greenhouse gas emissions per capita (tonnes, 1970–2024, 17 countries/territories, 935 observations). Trend and forecast figures from the accompanying OLS regression and K-Means (k=3) analysis, report prepared July 20, 2026.</div>
+  <div style="margin-top:10px;">Palau and New Caledonia figures reflect national reporting methods that can include fuel re-exported for international shipping and aviation. Guam and Nauru show flat, unchanging GHG figures across long stretches, suggesting possible carried-forward estimates rather than fresh measurement.</div>
 </div>
 
 <script>
-/* ================= BOOT ================= */
-const bootLinesEl = document.getElementById('bootLines');
-function typeBootLine(text, cb, speed=16){
-  let i = 0;
-  const span = document.createElement('div');
-  bootLinesEl.appendChild(span);
-  const t = setInterval(()=>{
-    span.textContent = text.slice(0,i+1);
-    i++;
-    if(i>=text.length){ clearInterval(t); cb && cb(); }
-  }, speed);
-}
-function runBoot(){
-  typeBootLine("PACIFIC ENERGY MONITOR", ()=>{
-    typeBootLine("", ()=>{
-      typeBootLine("Loading regional datasets 2013-2023...", ()=>{ setTimeout(loadBar, 250); });
+const YEARS = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023];
+const FIJI = [673.4,706.7,767.4,777.9,809.1,841.9,902.7,909.2,914.6,905.0,957.8,931.2,920.7,969.3,995.0,1019.3,1030.5,1112.6,1140.3,1227.8,1141.9,1094.9,1245.6,1284.5];
+
+const GHG = [
+  { name:"Fiji", value:2.9 },
+  { name:"Vanuatu", value:2.9 },
+  { name:"Fr. Polynesia", value:3.5 },
+  { name:"New Caledonia", value:13.2 },
+  { name:"Palau", value:131.9, broken:true }
+];
+
+const FORECAST_POWER = [11341.0,11496.2,11651.3,11806.4,11961.6];
+const FORECAST_POWER_YEARS = [2024,2025,2026,2027,2028];
+const FORECAST_GHG = [6.24,6.12,6.00,5.88,5.77];
+const FORECAST_GHG_YEARS = [2025,2026,2027,2028,2029];
+
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+/* ---------- Hero cover card: real growth-rate leaderboard ---------- */
+const HERO_GROWTH = [
+  { name:"New Caledonia", value:87.4, color:"#A15F0C" },
+  { name:"Papua New Guinea", value:34.8, color:"#146B70" },
+  { name:"Fiji", value:22.8, color:"#146B70" },
+  { name:"Guam", value:-4.6, color:"#BC432B" }
+];
+function buildHeroBars(){
+  const svg = document.getElementById("heroBars");
+  const W=320,H=230,padL=14,padR=14,padT=10,padB=34;
+  const zeroY = H-padB;
+  const maxAbs = 90;
+  const n = HERO_GROWTH.length, gap=16;
+  const barW=(W-padL-padR-gap*(n-1))/n;
+  const scale = v => (Math.abs(v)/maxAbs)*(H-padT-padB);
+
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:zeroY,x2:W-padR,y2:zeroY}));
+
+  HERO_GROWTH.forEach((d,i)=>{
+    const bx = padL + i*(barW+gap);
+    const h = scale(d.value);
+    const up = d.value >= 0;
+    const barY = up ? zeroY - h : zeroY;
+    const rect = el("rect",{x:bx.toFixed(1), y:barY.toFixed(1), width:barW.toFixed(1), height:Math.max(h,2).toFixed(1), fill:d.color, stroke:"#1B1A15","stroke-width":2});
+    svg.appendChild(rect);
+
+    const valY = up ? barY-8 : barY+h+16;
+    const val = el("text",{class:"bar-value show", x:bx+barW/2, y:valY, "text-anchor":"middle"});
+    val.textContent = (d.value>0?"+":"") + d.value.toFixed(1);
+    svg.appendChild(val);
+
+    const words = d.name.split(" ");
+    words.forEach((w,wi)=>{
+      const lbl = el("text",{class:"bar-label", x:bx+barW/2, y:H-padB+16+wi*11, "text-anchor":"middle"});
+      lbl.textContent = w;
+      svg.appendChild(lbl);
     });
   });
 }
-function loadBar(){
-  const barDiv = document.createElement('div');
-  bootLinesEl.appendChild(barDiv);
-  let n = 0; const total = 24;
-  const t = setInterval(()=>{
-    n++;
-    barDiv.textContent = "\u2588".repeat(n) + " " + Math.min(100, Math.round(n/total*100)) + "%";
-    if(n>=total){
-      clearInterval(t);
-      setTimeout(()=>{
-        const g = document.createElement('div');
-        g.textContent = "\nACCESS GRANTED";
-        g.style.marginTop = "8px";
-        bootLinesEl.appendChild(g);
-        setTimeout(()=>{
-          const msg = document.createElement('div');
-          msg.style.marginTop = "14px";
-          msg.style.color = "#dcefdc";
-          msg.textContent = "An encrypted channel opens.\n\nSUPERVISOR: Morning. We've flagged something odd\nin the regional energy figures. Electricity\ngeneration keeps climbing across the islands, but\nthe emissions numbers aren't moving the way they\nshould.\n\nSUPERVISOR: I need someone to actually read the\ndata before we write the headline. That's you.\nCase file PROJECT 0.18 is open.";
-          bootLinesEl.appendChild(msg);
-          document.getElementById('startBtn').style.display = 'inline-block';
-        }, 450);
-      }, 350);
+
+/* ---------- Chart 1: Fiji line ---------- */
+function buildChart1(){
+  const svg = document.getElementById("chart1");
+  const W=500,H=340,padL=46,padR=16,padT=16,padB=30;
+  const xMin=2000,xMax=2023,yMax=1400;
+  const x = yr => padL + (W-padL-padR)*((yr-xMin)/(xMax-xMin));
+  const y = v => H-padB - (H-padB-padT)*(v/yMax);
+
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:H-padB,x2:W-padR,y2:H-padB}));
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:padT,x2:padL,y2:H-padB}));
+  [0,700,1400].forEach(v=>{
+    svg.appendChild(el("line",{class:"gridline",x1:padL,y1:y(v),x2:W-padR,y2:y(v)}));
+    const t=el("text",{class:"axis-text",x:padL-6,y:y(v)+3,"text-anchor":"end"}); t.textContent=v; svg.appendChild(t);
+  });
+  [2000,2010,2019,2023].forEach(yr=>{
+    const t=el("text",{class:"axis-text",x:x(yr),y:H-padB+16,"text-anchor":"middle"}); t.textContent=yr; svg.appendChild(t);
+  });
+
+  const pts = FIJI.map((v,i)=>`${x(YEARS[i]).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const path = el("polyline",{class:"graph-line",points:pts,stroke:"#A15F0C"});
+  svg.appendChild(path);
+
+  const markYears=[2000,2010,2019,2023];
+  const markers = markYears.map((yr,k)=>{
+    const idx = YEARS.indexOf(yr);
+    const dot = el("circle",{class:"marker marker-dot",id:"m1-"+k,cx:x(yr),cy:y(FIJI[idx]),fill:"#1B1A15"});
+    const val = el("text",{class:"marker marker-val",id:"mv1-"+k,x:x(yr),y:y(FIJI[idx])-14,fill:"#1B1A15"});
+    val.textContent = FIJI[idx].toFixed(0);
+    svg.appendChild(dot); svg.appendChild(val);
+    return {dot,val};
+  });
+
+  return {path,markers};
+}
+function updateChart1(state,progress,stepIndex){
+  const len=1600;
+  state.path.setAttribute("stroke-dasharray",len);
+  state.path.setAttribute("stroke-dashoffset",len*(1-progress));
+  state.markers.forEach((m,k)=>{
+    const show = k<=stepIndex;
+    m.dot.classList.toggle("show",show);
+    m.val.classList.toggle("show",show);
+  });
+}
+
+/* ---------- Chart 3: GHG bars ---------- */
+function buildChart3(){
+  const svg = document.getElementById("chart3");
+  const W=500,H=340,padL=20,padR=20,padT=30,padB=46;
+  const cap=20;
+  const n=GHG.length, gap=14;
+  const barW=(W-padL-padR-gap*(n-1))/n;
+  const chartBottom=H-padB, chartTop=padT;
+  const scaleH = v => (Math.min(v,cap)/cap)*(chartBottom-chartTop);
+
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:chartBottom,x2:W-padR,y2:chartBottom}));
+
+  const bars = GHG.map((d,i)=>{
+    const bx = padL + i*(barW+gap);
+    const h = scaleH(d.value);
+    const yTop = chartBottom - h;
+    const color = d.broken ? "#BC432B" : (d.value>8 ? "#DD9A2E" : "#146B70");
+
+    const rect = el("rect",{class:"bar",id:"bar3-"+i,x:bx.toFixed(1),y:chartBottom,width:barW.toFixed(1),height:0,fill:color,stroke:"#1B1A15","stroke-width":2});
+    svg.appendChild(rect);
+
+    if(d.broken){
+      const pts = `${bx},${yTop} ${bx+barW*0.2},${yTop-8} ${bx+barW*0.4},${yTop+4} ${bx+barW*0.6},${yTop-10} ${bx+barW*0.8},${yTop+3} ${bx+barW},${yTop-6}`;
+      svg.appendChild(el("polyline",{points:pts,fill:"none",stroke:"#1B1A15","stroke-width":2}));
     }
-  }, 50);
+
+    const val = el("text",{class:"bar-value",id:"bv3-"+i,x:bx+barW/2,y:yTop-10});
+    val.textContent = (d.broken?"~"+d.value.toFixed(0):d.value)+"t";
+    svg.appendChild(val);
+
+    const lbl = el("text",{class:"bar-label",x:bx+barW/2,y:chartBottom+18});
+    lbl.textContent = d.name;
+    svg.appendChild(lbl);
+
+    return {rect,val,yTop,h};
+  });
+
+  return {bars,chartBottom};
 }
-runBoot();
-
-/* ================= STORY GRAPH (id-based, bug-safe) ================= */
-const nodes = {
-
-  n1: {chapter:"CH.1 \u2014 THE ASSUMPTION", sp:'sup', name:'SUPERVISOR',
-    text:"Here's the starting picture. Regional electricity generation has climbed every single year across the Pacific Islands for the last decade.", next:'n2'},
-  n2: {sp:'sup', name:'SUPERVISOR', text:"Population is growing, industry is expanding, more households are getting connected. On paper, that should be an emissions story.", next:'n3'},
-  n3: {sp:'sup', name:'SUPERVISOR', text:"So before we touch a single spreadsheet \u2014 what's your gut instinct? If power output keeps rising, what happens to emissions per person?", next:'n4choice'},
-  n4choice: {sp:'ana', name:'YOU', choice:true, prompt:"Choose your working hypothesis.", options:[
-      {label:"They rise together. More power, more emissions.", next:'n5a', log:{title:"HYPOTHESIS LOGGED", rows:[["Working theory","Electricity and emissions rise together"]]}},
-      {label:"I won't assume anything until I see the numbers.", next:'n5b', log:{title:"HYPOTHESIS LOGGED", rows:[["Working theory","No assumption \u2014 data first"]]}}
-    ]},
-  n5a: {sp:'sup', name:'SUPERVISOR', text:"That's the intuitive answer \u2014 most people would say the same. Which is exactly why we need to check it properly instead of publishing the intuition.", next:'n6'},
-  n5b: {sp:'sup', name:'SUPERVISOR', text:"Careful and correct. Let's earn the answer instead of guessing it \u2014 that's what this case file is for.", next:'n6'},
-  n6: {sp:'sys', name:'SYSTEM', text:"Pulling ten years of regional power-generation and per-capita GHG records...", next:'n7'},
-  n7: {sp:'sys', name:'SYSTEM', text:"Running a Pearson correlation between year-over-year electricity growth and year-over-year emissions growth.", next:'n8',
-    data:{title:"CORRELATION TEST", rows:[["Pearson r","0.18"],["p-value","0.53"],["Significance threshold","p < 0.05"],["Result","NOT SIGNIFICANT"]]},
-    log:{title:"EVIDENCE: WEAK CORRELATION", rows:[["Pearson r","0.18"],["p-value","0.53 (not significant)"]]}},
-  n8: {sp:'ana', name:'YOU', choice:true, prompt:"React to the result.", options:[
-      {label:"r = 0.18 is barely a relationship at all.", next:'n9'},
-      {label:"So my hypothesis was wrong.", next:'n9'}
-    ]},
-  n9: {sp:'sup', name:'SUPERVISOR', text:"We expected electricity to be the main driver of emissions. The evidence told a different story.", next:'n10', chapter:"CH.2 \u2014 THE TWIST"},
-  n10: {sp:'sup', name:'SUPERVISOR', text:"Producing more electricity does not automatically mean producing more emissions. Each country's energy system and economic activity shapes its own outcome.", next:'n11'},
-  n11: {sp:'ana', name:'YOU', text:"Then what's actually driving the differences between countries, if it isn't raw output?", next:'n12'},
-  n12: {sp:'sup', name:'SUPERVISOR', text:"Fuel mix. Industrial activity. Population size. Country-specific characteristics that never show up if you only look at total megawatt-hours.", next:'n13'},
-  n13: {sp:'sup', name:'SUPERVISOR', text:"And there's something else skewing the regional average. One country is doing almost all the work.", next:'n14'},
-  n14: {sp:'sys', name:'SYSTEM', text:"Flagging outlier in per-capita emissions trend...", next:'n15',
-    data:{title:"OUTLIER FLAG", rows:[["Country","Palau"],["Pattern","Large reduction in per-capita emissions"],["Effect on region","Pulls the whole regional trend downward"]]},
-    log:{title:"EVIDENCE: PALAU OUTLIER", rows:[["Finding","Palau's steep drop skews the regional decline"]]}},
-  n15: {sp:'sup', name:'SUPERVISOR', text:"Palau's large reduction in reported per-capita emissions is strongly affecting the apparent regional decline. Without it, the picture looks flatter.", next:'n16choice'},
-  n16choice: {sp:'ana', name:'YOU', choice:true, prompt:"Respond to the supervisor.", options:[
-      {label:"So the 'region is improving' story is really 'one country improved a lot.'", next:'n17'},
-      {label:"What is a single regional average even hiding?", next:'n17b'}
-    ]},
-  n17: {sp:'sup', name:'SUPERVISOR', text:"That's the kind of distinction that gets lost in a press release. It shouldn't get lost in our report.", next:'n18'},
-  n17b: {sp:'sup', name:'SUPERVISOR', text:"A regional average is one number pretending to represent eleven different countries. It smooths over exactly the differences we're being asked to explain.", next:'n18'},
-  n18: {sp:'ana', name:'YOU', text:"Then let's stop looking at one average and start grouping countries by how they actually behave.", next:'n19', chapter:"CH.3 \u2014 THE PATTERN"},
-  n19: {sp:'sys', name:'SYSTEM', text:"Running K-Means clustering across national emissions profiles...", next:'n20'},
-  n20: {sp:'sys', name:'SYSTEM', text:"Clustering complete. Three distinct groups identified.", next:'n21',
-    data:{title:"K-MEANS CLUSTERING", rows:[["Cluster A","Most Pacific Islands \u2014 low, stable"],["Cluster B","Palau \u2014 isolated cluster"],["Cluster C","New Caledonia \u2014 isolated cluster"]]},
-    log:{title:"EVIDENCE: THREE CLUSTERS", rows:[["Cluster A","Majority \u2014 low & stable"],["Cluster B","Palau (unique profile)"],["Cluster C","New Caledonia (unique profile)"]]}},
-  n21: {sp:'sup', name:'SUPERVISOR', text:"Most Pacific Island countries fall into one low, stable emissions cluster. Business as usual, year after year.", next:'n22'},
-  n22: {sp:'sup', name:'SUPERVISOR', text:"Palau and New Caledonia each form their own separate cluster. Their emissions profiles differ substantially from everyone else's \u2014 and from each other.", next:'n23choice'},
-  n23choice: {sp:'ana', name:'YOU', choice:true, prompt:"Sum up what the clustering means.", options:[
-      {label:"Same ocean, different emissions story.", next:'n24'},
-      {label:"There's no single 'Pacific Islands' trend \u2014 there are several.", next:'n24'}
-    ]},
-  n24: {sp:'sup', name:'SUPERVISOR', text:"Exactly. Write that down \u2014 it belongs in the summary.", next:'n25', log:{title:"KEY INSIGHT", rows:[["Note","No single regional trend \u2014 at least three distinct patterns"]]}},
-  n25: {sp:'sup', name:'SUPERVISOR', text:"We understand the last ten years now. The harder question is what comes next \u2014 and what we actually tell people to do about it.", next:'n26choice', chapter:"CH.4 \u2014 LOOKING FORWARD"},
-  n26choice: {sp:'ana', name:'YOU', choice:true, prompt:"Where do you want to take the investigation next?", options:[
-      {label:"Build the forecast first.", next:'n27'},
-      {label:"Skip ahead to recommendations.", next:'n33'}
-    ]},
-  n27: {sp:'sys', name:'SYSTEM', text:"Building a linear projection from the ten-year trend...", next:'n28'},
-  n28: {sp:'sys', name:'SYSTEM', text:"Projection complete.", next:'n29',
-    data:{title:"LINEAR FORECAST", rows:[["Electricity by 2028","~11,960 GWh"],["Avg. per-capita GHG by 2029","~5.8 tonnes"],["Model","Simple linear trend"],["Caveat","Directional, not a precise prediction"]]},
-    log:{title:"EVIDENCE: FORECAST", rows:[["Electricity, 2028","~11,960 GWh (rising)"],["Per-capita GHG, 2029","~5.8 t (declining)"]]}},
-  n29: {sp:'sup', name:'SUPERVISOR', text:"Regional electricity generation is projected to keep climbing, toward roughly 11,960 GWh by 2028.", next:'n30'},
-  n30: {sp:'sup', name:'SUPERVISOR', text:"At the same time, average per-capita emissions are expected to gradually decline, to around 5.8 tonnes by 2029.", next:'n31choice'},
-  n31choice: {sp:'ana', name:'YOU', choice:true, prompt:"React to the forecast.", options:[
-      {label:"That's the opposite of what most people would predict.", next:'n32'},
-      {label:"How much should we actually trust a linear model?", next:'n32b'}
-    ]},
-  n32: {sp:'sup', name:'SUPERVISOR', text:"It is. Which is exactly why we check the data instead of trusting the headline. But it's a linear model on a limited window \u2014 treat it as a compass heading, not a guarantee.", next:'n33'},
-  n32b: {sp:'sup', name:'SUPERVISOR', text:"Not much on its own. Linear models assume the last ten years keep behaving like the last ten years. Fuel-mix shifts or new policy could bend that line fast.", next:'n33'},
-  n33: {sp:'sup', name:'SUPERVISOR', text:"This is the part that matters most. A finding is only useful if it changes a decision. Four recommendations, based strictly on what the data showed us \u2014 nothing invented.", next:'n34', chapter:"CH.5 \u2014 WHAT SHOULD BE DONE"},
-  n34: {sp:'sup', name:'SUPERVISOR', text:"One: transition to cleaner energy. Volume isn't the driving factor \u2014 composition is. The leverage point is what fills the generation mix.", next:'n35',
-    data:{title:"RECOMMENDATION 1 / 4", rows:[["Focus","Cleaner energy transition"],["Action","Expand access, raise renewable share"]]},
-    log:{title:"RECOMMENDATION 1: CLEAN ENERGY MIX", rows:[["Action","Expand access AND grow renewables' share"]]}},
-  n35: {sp:'ana', name:'YOU', text:"So keep connecting more households, but change what's powering the grid while you do it.", next:'n36'},
-  n36: {sp:'sup', name:'SUPERVISOR', text:"Two: country-specific policy. A single regional strategy would ignore everything the clustering just showed us.", next:'n37',
-    data:{title:"RECOMMENDATION 2 / 4", rows:[["Palau","Investigate and stabilize the outlier"],["New Caledonia","Manage industrial growth"],["Rest of region","Maintain the low, stable baseline"]]},
-    log:{title:"RECOMMENDATION 2: TAILORED POLICY", rows:[["Palau","Understand and stabilize its outlier drop"],["New Caledonia","Manage industrial-driven growth"],["Others","Protect the existing low, stable pattern"]]}},
-  n37: {sp:'ana', name:'YOU', text:"Meaning Palau needs its drop understood so it isn't a fragile one-off, and New Caledonia needs its growth actively managed.", next:'n38'},
-  n38: {sp:'sup', name:'SUPERVISOR', text:"Exactly that. Three: improve data collection. We built all of this on a genuinely limited dataset \u2014 that limitation belongs in the open, not a footnote.", next:'n39',
-    data:{title:"RECOMMENDATION 3 / 4", rows:[["Focus","Data quality"],["Needed","Population detail, fuel mix, renewable share, monthly resolution"]]},
-    log:{title:"RECOMMENDATION 3: BETTER DATA", rows:[["Gaps","Population detail, fuel mix, renewable share, monthly granularity"],["Why","Sharper data means more trustworthy models"]]}},
-  n39: {sp:'ana', name:'YOU', text:"Finer time resolution alone would help \u2014 annual numbers hide a lot that monthly numbers wouldn't.", next:'n40'},
-  n40: {sp:'sup', name:'SUPERVISOR', text:"Four: keep monitoring. The forecast reads as cautiously positive \u2014 but it's still a simple linear model, and simple models are the first thing reality contradicts.", next:'n41',
-    data:{title:"RECOMMENDATION 4 / 4", rows:[["Focus","Ongoing monitoring"],["Signal","Electricity up, per-capita emissions down (slowly)"],["Caveat","Re-check the trend as new years of data arrive"]]},
-    log:{title:"RECOMMENDATION 4: KEEP WATCHING", rows:[["Trend","Electricity rising, per-capita emissions slowly falling"],["Duty","Re-run the analysis as real data comes in"]]}},
-  n41: {sp:'ana', name:'YOU', choice:true, prompt:"Close out the investigation with the supervisor.", options:[
-      {label:"So the real challenge was never how much power gets made.", next:'n42a'},
-      {label:"So the report isn't finished the day it's published.", next:'n42b'}
-    ]},
-  n42a: {sp:'sup', name:'SUPERVISOR', text:"It's how that power gets made. Say it exactly like that in the summary \u2014 it's the one line that will survive editing.", next:'n43'},
-  n42b: {sp:'sup', name:'SUPERVISOR', text:"Correct. A forecast is a snapshot, not a promise. Someone has to keep re-checking it.", next:'n43'},
-  n43: {sp:'sup', name:'SUPERVISOR', text:"Good work, analyst. File it.", next:'END'}
-};
-
-let notebookLog = [];
-let current = 'n1';
-
-const speakerEl = document.getElementById('speaker');
-const dialogueEl = document.getElementById('dialogueText');
-const choicesEl = document.getElementById('choices');
-const advanceHint = document.getElementById('advanceHint');
-const portraitLeft = document.getElementById('portraitLeft');
-const portraitRight = document.getElementById('portraitRight');
-const dataCard = document.getElementById('dataCard');
-const dataCardBody = document.getElementById('dataCardBody');
-const chapterLabel = document.getElementById('chapterLabel');
-const logCount = document.getElementById('logCount');
-
-function startGame(){
-  document.getElementById('boot').classList.remove('active');
-  document.getElementById('vn').classList.add('active');
-  render('n1');
+function updateChart3(state,stepIndex){
+  const reveal = [2,3,4,5][stepIndex]!==undefined ? [2,3,4,5][stepIndex] : 5;
+  state.bars.forEach((b,i)=>{
+    if(i<reveal){
+      b.rect.setAttribute("y",b.yTop);
+      b.rect.setAttribute("height",b.h);
+      b.val.classList.add("show");
+    } else {
+      b.rect.setAttribute("y",state.chartBottom);
+      b.rect.setAttribute("height",0);
+      b.val.classList.remove("show");
+    }
+  });
 }
 
-function render(id){
-  if(id === 'END'){ showEnd(); return; }
-  const node = nodes[id];
-  if(!node){ console.error('missing node', id); return; }
-  current = id;
-  dataCard.classList.remove('show');
-  if(node.chapter){ chapterLabel.textContent = node.chapter; }
+/* ---------- Chart 4a/4b: forecast mini line charts ---------- */
+function buildForecastChart(svgId, data, years, yMax, color, unitFmt){
+  const svg = document.getElementById(svgId);
+  const W=240,H=260,padL=40,padR=14,padT=18,padB=32;
+  const x = i => padL + (W-padL-padR)*(i/(data.length-1));
+  const y = v => H-padB - (H-padB-padT)*(v/yMax);
 
-  if(node.sp === 'sup'){
-    speakerEl.textContent = node.name;
-    portraitLeft.classList.add('show');
-    portraitRight.classList.remove('show');
-  } else if(node.sp === 'ana'){
-    speakerEl.textContent = node.name;
-    portraitRight.classList.add('show');
-    portraitLeft.classList.remove('show');
-  } else {
-    speakerEl.textContent = node.name;
-    portraitLeft.classList.remove('show');
-    portraitRight.classList.remove('show');
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:H-padB,x2:W-padR,y2:H-padB}));
+  svg.appendChild(el("line",{class:"axis-line",x1:padL,y1:padT,x2:padL,y2:H-padB}));
+
+  years.forEach((yr,i)=>{
+    if(i%2===0 || i===years.length-1){
+      const t=el("text",{class:"axis-text",x:x(i),y:H-padB+15,"text-anchor":"middle"}); t.textContent=yr; svg.appendChild(t);
+    }
+  });
+
+  const pts = data.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const path = el("polyline",{class:"graph-line",points:pts,stroke:color,"stroke-dasharray":"7 5"});
+  svg.appendChild(path);
+
+  const markers = data.map((v,i)=>{
+    const dot = el("circle",{class:"marker marker-dot",cx:x(i),cy:y(v),fill:color});
+    const val = el("text",{class:"marker marker-val",x:x(i),y:y(v)-12,fill:"#1B1A15"});
+    val.textContent = unitFmt(v);
+    svg.appendChild(dot); svg.appendChild(val);
+    return {dot,val};
+  });
+
+  return {path,markers,len:520};
+}
+function updateForecastChart(state, stepIndex){
+  const n = state.markers.length;
+  const frac = (stepIndex+1)/n;
+  state.path.setAttribute("stroke-dashoffset", state.len*(1-frac));
+  state.markers.forEach((m,k)=>{
+    const show = k<=stepIndex;
+    m.dot.classList.toggle("show",show);
+    m.val.classList.toggle("show",show);
+  });
+}
+
+/* ---------- Chart 5: correlation + cluster bubbles ---------- */
+function buildChart5(){
+  const svg = document.getElementById("chart5");
+  const W=500,H=340;
+
+  // Correlation scatter group (step 0)
+  const corrG = el("g",{id:"corrG"});
+  const cx0=60, cy0=290, cw=380, ch=200;
+  corrG.appendChild(el("line",{class:"axis-line",x1:cx0,y1:cy0,x2:cx0+cw,y2:cy0}));
+  corrG.appendChild(el("line",{class:"axis-line",x1:cx0,y1:cy0-ch,x2:cx0,y2:cy0}));
+  const xt = el("text",{class:"axis-text",x:cx0+cw/2,y:cy0+26,"text-anchor":"middle"}); xt.textContent="POWER GROWTH RATE →"; corrG.appendChild(xt);
+  const yt = el("text",{class:"axis-text",x:cx0-30,y:cy0-ch/2,"text-anchor":"middle",transform:`rotate(-90 ${cx0-30} ${cy0-ch/2})`}); yt.textContent="GHG/CAPITA GROWTH →"; corrG.appendChild(yt);
+
+  const cloud=[];
+  const rnd = (seed)=>{ const x=Math.sin(seed*999)*10000; return x-Math.floor(x); };
+  for(let i=0;i<14;i++){
+    const px = cx0 + 20 + rnd(i)*  (cw-40);
+    const py = cy0 - ch*0.35 - (rnd(i+50)-0.5)*ch*0.5;
+    const dot = el("circle",{class:"corr-dot",cx:px.toFixed(1),cy:py.toFixed(1),r:5,fill:"#726C5C",opacity:"0.35"});
+    corrG.appendChild(dot); cloud.push(dot);
   }
+  const ncX=cx0+cw*0.62, ncY=cy0-ch*0.62;
+  const vanX=cx0+cw*0.30, vanY=cy0-ch*0.30;
+  const ncDot=el("circle",{cx:ncX,cy:ncY,r:6.5,fill:"#DD9A2E",stroke:"#1B1A15","stroke-width":2});
+  const vanDot=el("circle",{cx:vanX,cy:vanY,r:6.5,fill:"#146B70",stroke:"#1B1A15","stroke-width":2});
+  corrG.appendChild(ncDot); corrG.appendChild(vanDot);
+  const ncLbl=el("text",{class:"bubble-sub",x:ncX,y:ncY-12}); ncLbl.textContent="New Caledonia +0.138t/yr"; corrG.appendChild(ncLbl);
+  const vanLbl=el("text",{class:"bubble-sub",x:vanX,y:vanY-12}); vanLbl.textContent="Vanuatu -0.030t/yr"; corrG.appendChild(vanLbl);
 
-  if(node.choice){
-    dialogueEl.textContent = node.prompt || "";
-    advanceHint.style.display = 'none';
-    choicesEl.innerHTML = '';
-    choicesEl.classList.add('active');
-    node.options.forEach(opt=>{
-      const b = document.createElement('button');
-      b.className = 'choiceBtn';
-      b.textContent = opt.label;
-      b.onclick = (e)=>{
-        e.stopPropagation();
-        choicesEl.classList.remove('active');
-        if(opt.log) addLog(opt.log);
-        render(opt.next);
-      };
-      choicesEl.appendChild(b);
-    });
+  const trendLine = el("line",{class:"corr-line",x1:cx0+10,y1:cy0-ch*0.42,x2:cx0+cw-10,y2:cy0-ch*0.46});
+  corrG.appendChild(trendLine);
+  const rLbl = el("text",{class:"bubble-sub",x:cx0+cw-10,y:cy0-ch*0.46-10,"text-anchor":"end"}); rLbl.textContent="r = 0.18, p = 0.53"; corrG.appendChild(rLbl);
+
+  svg.appendChild(corrG);
+
+  // Bubble cluster group (steps 1-3)
+  const bubG = el("g",{id:"bubG",opacity:"0"});
+  const b0 = el("circle",{class:"bubble",id:"b0",cx:150,cy:170,r:0,fill:"#146B70",opacity:"0.85",stroke:"#1B1A15","stroke-width":2});
+  const b1 = el("circle",{class:"bubble",id:"b1",cx:370,cy:120,r:0,fill:"#BC432B",opacity:"0.9",stroke:"#1B1A15","stroke-width":2});
+  const b2 = el("circle",{class:"bubble",id:"b2",cx:370,cy:250,r:0,fill:"#DD9A2E",opacity:"0.9",stroke:"#1B1A15","stroke-width":2});
+  [b0,b1,b2].forEach(b=>bubG.appendChild(b));
+  const l0=el("text",{class:"bubble-label",x:150,y:170}); l0.textContent="15 PICTs"; 
+  const l0s=el("text",{class:"bubble-sub",x:150,y:184}); l0s.textContent="low & stable";
+  const l1=el("text",{class:"bubble-label",x:370,y:117}); l1.textContent="Palau";
+  const l1s=el("text",{class:"bubble-sub",x:370,y:131}); l1s.textContent="extreme, falling";
+  const l2=el("text",{class:"bubble-label",x:370,y:247}); l2.textContent="New Caledonia";
+  const l2s=el("text",{class:"bubble-sub",x:370,y:261}); l2s.textContent="elevated, rising";
+  [l0,l0s,l1,l1s,l2,l2s].forEach(t=>bubG.appendChild(t));
+  svg.appendChild(bubG);
+
+  return {corrG,cloud,trendLine,rLbl,bubG,b0,b1,b2,l0,l0s,l1,l1s,l2,l2s};
+}
+function updateChart5(state, stepIndex){
+  if(stepIndex===0){
+    state.corrG.style.opacity="1";
+    state.bubG.style.opacity="0";
+    state.cloud.forEach((c,i)=>setTimeout(()=>c.style.opacity="0.35", i*40));
+    state.trendLine.style.opacity="1";
   } else {
-    choicesEl.classList.remove('active');
-    advanceHint.style.display = 'block';
-    dialogueEl.textContent = node.text;
-    if(node.data){
-      dataCardBody.innerHTML = '';
-      dataCard.querySelector('.title').textContent = node.data.title;
-      node.data.rows.forEach(r=>{
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.innerHTML = '<span>'+r[0]+'</span><span>'+r[1]+'</span>';
-        dataCardBody.appendChild(row);
+    state.corrG.style.opacity="0";
+    state.bubG.style.opacity="1";
+    const sizes = {
+      1: {b0:70, b1:0,  b2:0},
+      2: {b0:34, b1:56, b2:0},
+      3: {b0:34, b1:34, b2:50}
+    };
+    const cfg = sizes[stepIndex] || sizes[3];
+    state.b0.setAttribute("r",cfg.b0);
+    state.b1.setAttribute("r",cfg.b1);
+    state.b2.setAttribute("r",cfg.b2);
+    [state.l0,state.l0s].forEach(t=>t.style.opacity = cfg.b0>0?1:0);
+    [state.l1,state.l1s].forEach(t=>t.style.opacity = cfg.b1>0?1:0);
+    [state.l2,state.l2s].forEach(t=>t.style.opacity = cfg.b2>0?1:0);
+  }
+}
+
+/* ---------- vertical sticky engine ---------- */
+function setupStory(storyId,textId,railId,stepCount,onUpdate){
+  const story = document.getElementById(storyId);
+  const steps = document.querySelectorAll("#"+textId+" .step");
+  const railDots = railId ? document.querySelectorAll("#"+railId+" .dot") : [];
+
+  function update(){
+    const rect = story.getBoundingClientRect();
+    const total = story.offsetHeight - window.innerHeight;
+    const raw = -rect.top/(total||1);
+    const clamped = Math.max(0,Math.min(0.9999,raw));
+    const stepFloat = clamped*stepCount;
+    const stepIndex = Math.min(stepCount-1,Math.floor(stepFloat));
+    const stepProgress = stepFloat - stepIndex;
+
+    steps.forEach((s,i)=>s.classList.toggle("active",i===stepIndex));
+    railDots.forEach((d,i)=>d.classList.toggle("active",i===stepIndex));
+    onUpdate(clamped,stepIndex,stepProgress);
+  }
+  let ticking=false;
+  window.addEventListener("scroll",()=>{
+    if(!ticking){ requestAnimationFrame(()=>{update(); ticking=false;}); ticking=true; }
+  });
+  update();
+}
+
+/* ---------- horizontal scroll engine (reusable) ---------- */
+function setupHScroll(outerId, trackId, fillId){
+  const outer = document.getElementById(outerId);
+  const track = document.getElementById(trackId);
+  const fill = document.getElementById(fillId);
+
+  function update(){
+    const rect = outer.getBoundingClientRect();
+    const total = outer.offsetHeight - window.innerHeight;
+    const raw = -rect.top/(total||1);
+    const clamped = Math.max(0,Math.min(1,raw));
+    const maxScroll = Math.max(0, track.scrollWidth - track.parentElement.clientWidth + 40);
+    track.style.transform = `translateX(-${clamped*maxScroll}px)`;
+    if(fill) fill.style.width = (clamped*100)+"%";
+  }
+  let ticking=false;
+  window.addEventListener("scroll",()=>{
+    if(!ticking){ requestAnimationFrame(()=>{update(); ticking=false;}); ticking=true; }
+  });
+  window.addEventListener("resize", update);
+  update();
+}
+
+function updateProgressBar(){
+  const doc = document.documentElement;
+  const scrolled = (doc.scrollTop)/(doc.scrollHeight-doc.clientHeight)*100;
+  document.getElementById("progress").style.width = scrolled+"%";
+}
+
+window.addEventListener("load", ()=>{
+  buildHeroBars();
+  const c1 = buildChart1();
+  const c3 = buildChart3();
+  const c4a = buildForecastChart("chart4a", FORECAST_POWER, FORECAST_POWER_YEARS, 14000, "#DD9A2E", v=>v.toFixed(0));
+  const c4b = buildForecastChart("chart4b", FORECAST_GHG, FORECAST_GHG_YEARS, 8, "#146B70", v=>v.toFixed(2)+"t");
+  const c5 = buildChart5();
+
+  setupStory("story1","text1","rail1",4,(clamped,stepIndex)=>updateChart1(c1,clamped,stepIndex));
+  setupHScroll("hstory","htrack","hfill");
+  setupStory("story3","text3","rail3",4,(clamped,stepIndex)=>updateChart3(c3,stepIndex));
+
+  // interlude needs a tall scroll runway just like hstory — give it height via JS based on track width
+  const interludeSection = document.querySelector(".interlude");
+  const itrack = document.getElementById("itrack");
+  function sizeInterlude(){
+    const overflow = Math.max(0, itrack.scrollWidth - itrack.parentElement.clientWidth + 40);
+    const SCROLL_LENGTH_MULTIPLIER = 3.2; // higher = more scrolling required to swipe through
+    interludeSection.style.height = (window.innerHeight + overflow * SCROLL_LENGTH_MULTIPLIER) + "px";
+  }
+  sizeInterlude();
+  window.addEventListener("resize", sizeInterlude);
+  window.addEventListener("load", sizeInterlude);
+  (function(){
+    const outer = interludeSection;
+    const track = itrack;
+    const fill = document.getElementById("ifill");
+    const frames = Array.from(track.querySelectorAll(".interlude-frame"));
+    function update(){
+      const rect = outer.getBoundingClientRect();
+      const total = outer.offsetHeight - window.innerHeight;
+      const raw = -rect.top/(total||1);
+      const clamped = Math.max(0,Math.min(1,raw));
+      const maxScroll = Math.max(0, track.scrollWidth - track.parentElement.clientWidth + 40);
+      track.style.transform = `translateX(-${clamped*maxScroll}px)`;
+      if(fill) fill.style.width = (clamped*100)+"%";
+
+      // spotlight: whichever frame's center is nearest the viewport center gets full focus
+      const viewportCenter = window.innerWidth/2;
+      let closest = null, closestDist = Infinity;
+      frames.forEach(f=>{
+        const r = f.getBoundingClientRect();
+        const c = r.left + r.width/2;
+        const d = Math.abs(c - viewportCenter);
+        if(d < closestDist){ closestDist = d; closest = f; }
       });
-      dataCard.classList.add('show');
+      frames.forEach(f=>f.classList.toggle("is-active", f===closest));
     }
-    if(node.log){ addLog(node.log); }
-  }
-}
-
-function advance(){
-  const node = nodes[current];
-  if(!node || node.choice) return;
-  if(node.next) render(node.next);
-}
-
-function addLog(entry){
-  if(notebookLog.find(l=>l.title===entry.title)) return;
-  notebookLog.push(entry);
-  logCount.textContent = '['+notebookLog.length+']';
-  renderNotebook();
-}
-
-function renderNotebook(){
-  const body = document.getElementById('notebookBody');
-  if(notebookLog.length===0){
-    body.innerHTML = '<div class="empty">No evidence logged yet. Keep investigating.</div>';
-    return;
-  }
-  body.innerHTML = '';
-  notebookLog.forEach(entry=>{
-    const div = document.createElement('div');
-    div.className = 'entry';
-    const t = document.createElement('div');
-    t.className = 't';
-    t.textContent = entry.title;
-    div.appendChild(t);
-    entry.rows.forEach(r=>{
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = '<span>'+r[0]+'</span><span>'+r[1]+'</span>';
-      div.appendChild(row);
+    let ticking=false;
+    window.addEventListener("scroll",()=>{
+      if(!ticking){ requestAnimationFrame(()=>{update(); ticking=false;}); ticking=true; }
     });
-    body.appendChild(div);
-  });
-}
+    window.addEventListener("resize", update);
+    update();
+  })();
 
-function toggleNotebook(show){
-  const nb = document.getElementById('notebook');
-  if(show){ renderNotebook(); nb.classList.add('show'); }
-  else { nb.classList.remove('show'); }
-}
+  setupStory("story4","text4","rail4",5,(clamped,stepIndex)=>{ updateForecastChart(c4a,stepIndex); updateForecastChart(c4b,stepIndex); });
+  setupStory("story5","text5","rail5",4,(clamped,stepIndex)=>updateChart5(c5,stepIndex));
 
-function showEnd(){
-  document.getElementById('vn').classList.remove('active');
-  document.getElementById('endScreen').classList.add('active');
-  document.getElementById('endBody').innerHTML =
-    '<p style="text-align:center;color:#fff;">CASE FILE PROJECT 0.18 \u2014 CLOSED</p>' +
-    '<h3>MAIN FINDING</h3>' +
-    '<p>Increasing electricity generation does not necessarily increase greenhouse gas emissions. The correlation between generation growth and per-capita emissions growth was weak and statistically insignificant (r = 0.18, p = 0.53). Emissions are shaped far more by fuel mix, industrial activity, population, and country-specific characteristics \u2014 and by Palau\u2019s outsized reduction skewing the regional average.</p>' +
-    '<h3>WHAT SHOULD BE DONE</h3>' +
-    '<ol>' +
-      '<li><b>Transition to cleaner energy.</b> Volume isn\u2019t the driver \u2014 composition is. Keep expanding electricity access, but grow the renewable share of the mix.</li>' +
-      '<li><b>Adopt country-specific policy.</b> Understand and stabilize Palau\u2019s outlier drop, actively manage New Caledonia\u2019s industrial growth, and support the rest of the region in holding its already-low baseline.</li>' +
-      '<li><b>Improve data collection.</b> Add population detail, fuel-mix breakdowns, renewable-energy shares, and finer time resolution so future models are sharper than this one.</li>' +
-      '<li><b>Continue monitoring.</b> The forecast \u2014 electricity toward ~11,960 GWh by 2028, per-capita emissions toward ~5.8 tonnes by 2029 \u2014 is a positive but simple linear projection. Re-check it as real data arrives; don\u2019t treat it as finished.</li>' +
-    '</ol>' +
-    '<h3>CLOSING NOTE</h3>' +
-    '<p>The real challenge was never how much electricity gets produced. It\u2019s how that electricity gets produced \u2014 and whether anyone keeps watching after the report ships.</p>';
-}
+  window.addEventListener("scroll", updateProgressBar);
+  updateProgressBar();
+});
 </script>
 
 </body>
